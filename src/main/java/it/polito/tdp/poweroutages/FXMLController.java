@@ -5,9 +5,11 @@
 package it.polito.tdp.poweroutages;
 
 import java.net.URL;
+import java.util.List;
 import java.util.ResourceBundle;
 import it.polito.tdp.poweroutages.model.Model;
 import it.polito.tdp.poweroutages.model.Nerc;
+import it.polito.tdp.poweroutages.model.PowerOutages;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.ComboBox;
@@ -39,6 +41,46 @@ public class FXMLController {
     @FXML
     void doRun(ActionEvent event) {
     	txtResult.clear();
+    	
+    	if(cmbNerc.getValue()==null) {
+    		txtResult.setText("Selezionare un NERC");
+    		return;
+    	}
+    	
+    	int maxYears;
+    	try {
+    		maxYears = Integer.parseInt(txtYears.getText());
+    	} catch(NumberFormatException e) {
+    		txtResult.setText("Inserisci un numero minimo di anni");
+    		return;
+    	}
+    	
+    	int maxHours;
+    	try {
+    		maxHours = Integer.parseInt(txtHours.getText());
+    	} catch(NumberFormatException e) {
+    		txtResult.setText("Inserisci un numero minimo di ore");
+    		return;
+    	}
+    	
+    	if(maxYears<=0 || maxHours<=0) {
+    		txtResult.setText("Il numero minimo di anni e ore deve essere positivo e maggiore di 0");
+    		return;
+    	}
+    	
+    	List<PowerOutages> soluzione = this.model.getWorstCase(cmbNerc.getValue(), maxYears, maxHours);
+    	
+    	if(soluzione.size()==0) {
+    		txtResult.setText("Nessuna soluzione");
+    		return;
+    	}
+    	
+    	txtResult.appendText("Tot people affected: " + this.model.countAffected(soluzione) + "\n");
+    	txtResult.appendText("Tot hours of outage: " + this.model.countHours(soluzione) + "\n");
+    	
+    	for(PowerOutages po : soluzione) {
+    		txtResult.appendText(po.toString() + "\n");
+    	}
     }
 
     @FXML // This method is called by the FXMLLoader when initialization is complete
@@ -54,5 +96,9 @@ public class FXMLController {
     
     public void setModel(Model model) {
     	this.model = model;
+    	List<Nerc> nercList = model.getNercList();
+    	for(Nerc nerc : nercList) {
+    		cmbNerc.getItems().add(nerc);
+    	}
     }
 }
